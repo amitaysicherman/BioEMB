@@ -68,20 +68,9 @@ def build_trie_from_text(corpus: List[str], tokenizer: Any) -> Trie:
     Returns:
         An initialized Trie object.
     """
-    token_sequences = [
+    return Trie([
         tokenizer.encode(text) for text in corpus
-    ]
-    # We only need the token IDs, not special tokens for the trie structure itself.
-    # The tokenizer handles BOS/EOS, but the trie just needs the body.
-    cleaned_sequences = []
-    for seq in token_sequences:
-        cleaned_seq = [
-            t for t in seq if t not in 
-            [tokenizer.bos_token_id, tokenizer.eos_token_id, tokenizer.pad_token_id]
-        ]
-        cleaned_sequences.append(cleaned_seq)
-        
-    return Trie(cleaned_sequences)
+    ])
 
 
 def build_mask_from_trie(
@@ -114,12 +103,7 @@ def build_mask_from_trie(
     for i in range(batch_size):
         for j in range(seq_length):
             prefix = sequences[i, :j+1].tolist()
-            # The trie should not contain special tokens
-            cleaned_prefix = [
-                t for t in prefix if t < trie.root.get('bos_token_id', float('inf'))
-            ]
-
-            valid_next = trie.get_valid_next_tokens(cleaned_prefix)
+            valid_next = trie.get_valid_next_tokens(prefix)
             if valid_next:
                 mask[i, j, valid_next] = 1.0
     

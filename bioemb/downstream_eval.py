@@ -18,13 +18,11 @@ logger = logging.getLogger(__name__)
 
 class PredictionHead(nn.Module):
     """A simple linear prediction head for classification or regression."""
-    def __init__(self, bottleneck_dim: int, output_dim: int = 1):
+    def __init__(self, bottleneck_dim: int, output_dim: int = 1,dropout: float = 0.5):
         super().__init__()
         self.head = nn.Sequential(
-            nn.Linear(bottleneck_dim, bottleneck_dim // 2),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(bottleneck_dim // 2, output_dim)
+            nn.Dropout(dropout),
+            nn.Linear(bottleneck_dim, output_dim),
         )
 
     def forward(self, x):
@@ -36,7 +34,9 @@ def train_prediction_head(
     test_dataset,
     bottleneck_dim: int,
     device: torch.device,
-    task_type: str = 'classification'
+    task_type: str = 'classification',
+    mlm: bool = False
+
 ):
     """
     Trains and evaluates a prediction head on top of frozen model embeddings.
@@ -62,13 +62,24 @@ def train_prediction_head(
         with torch.no_grad():
             for batch in tqdm(loader, desc="Generating embeddings"):
                 batch = {k: v.to(device) for k, v in batch.items()}
-                bottleneck = model(
-                    src_input_ids=batch['encoder_outputs'], # Note: Passing precomputed for speed
-                    src_attention_mask=batch['encoder_attention_mask'],
-                    input_ids=batch['input_ids'],
-                    attention_mask=batch['attention_mask'],
-                    return_bottleneck=True
-                )
+                if mlm:
+                    output=model(batch['input_ids'],batch['attention_mask'])
+                    if hasattr(output, 'pooler_output') and output.pooler_output is not None:
+                        bottleneck = output.pooler_output.cpu()
+                    else:
+                        last_hidden_state = output.last_hidden_state
+                        attention_mask = batch['attention_mask']
+                        mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size())
+                        pooled_output = (last_hidden_state * mask_expanded).sum(dim=1) / attention_mask.sum(dim=1, keepdim=True)
+                        bottleneck = pooled_output.cpu()
+                else:
+                    bottleneck = model(
+                        encoder_outputs=batch['encoder_outputs'],
+                        input_ids=batch['input_ids'],
+                        attention_mask=batch['attention_mask'],
+                        labels=None,
+                        return_bottleneck=True
+                    )
                 all_embeds.append(bottleneck.cpu())
                 all_labels.append(batch['downstream_label'].cpu())
         return torch.cat(all_embeds), torch.cat(all_labels)
@@ -99,17 +110,18 @@ def train_prediction_head(
             loss.backward()
             optimizer.step()
 
-    # 3. Evaluate the head
-    head.eval()
-    with torch.no_grad():
-        test_preds = head(test_embeds.to(device)).squeeze().cpu().numpy()
+        # 3. Evaluate the head
+        head.eval()
+        with torch.no_grad():
+            test_preds = head(test_embeds.to(device)).squeeze().cpu().numpy()
+            if task_type == 'classification':
+                score = roc_auc_score(test_labels.numpy(), test_preds)
+                best_score = max(best_score, score)
+            else:
+                score = np.sqrt(mean_squared_error(test_labels.numpy(), test_preds))
+                best_score = min(best_score, score)
 
-    if task_type == 'classification':
-        score = roc_auc_score(test_labels.numpy(), test_preds)
-    else:
-        score = np.sqrt(mean_squared_error(test_labels.numpy(), test_preds))
-
-    return score
+    return best_score
 
 
 def compute_downstream_metrics(

@@ -14,6 +14,7 @@ This script orchestrates the entire training pipeline:
 
 import logging
 import torch
+import os
 from transformers import Trainer, TrainingArguments
 from tdc.single_pred import ADME
 
@@ -121,7 +122,6 @@ def main():
     # --- 6. Initialize BioEmb Model ---
     logger.info("Initializing BioEmb model...")
     bioemb_model = BioEmbModel(
-        encoder=encoder,
         trie=trie,
         encoder_dim=encoder_dim,
         bottleneck_dim=config["bottleneck_dim"],
@@ -129,7 +129,7 @@ def main():
         num_hidden_layers=config["num_hidden_layers"],
         num_attention_heads=config["num_attention_heads"],
         dropout=config["dropout"],
-        tgt_vocab_size=len(tgt_tokenizer.get_vocab()),
+        tokenizer=tgt_tokenizer,
         entropy_normalize=config.get("entropy_normalize", True),
         constraint_mode=config.get("constraint_mode", "always")
     ).to(device)
@@ -167,6 +167,7 @@ def main():
         report_to=[config.get("report_to", "tensorboard")],
         fp16=torch.cuda.is_available(),
         dataloader_pin_memory=False,
+        save_safetensors=False
     )
 
     trainer = Trainer(
@@ -180,6 +181,7 @@ def main():
 
     # --- 8. Start Training ---
     logger.info("Starting BioEmb model training...")
+    trainer.evaluate()
     trainer.train()
     logger.info("Training complete!")
 

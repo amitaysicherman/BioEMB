@@ -108,7 +108,6 @@ class BioEmbDataset(TorchDataset):
 
         return {
             "encoder_outputs": encoder_output,
-            "encoder_attention_mask": torch.ones(encoder_output.shape[0]), # Simplified mask after pooling
             "input_ids": tgt_tokens["input_ids"].squeeze(0),
             "attention_mask": tgt_tokens["attention_mask"].squeeze(0),
             "labels": decoder_labels,
