@@ -31,7 +31,7 @@ This method forces the model to learn a compressed, informative representation, 
 ### 1\. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/BioEmb.git
+git clone https://github.com/amitaysicherman/BioEmb.git
 cd BioEmb
 ```
 
