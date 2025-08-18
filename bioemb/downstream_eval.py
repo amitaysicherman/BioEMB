@@ -18,11 +18,13 @@ logger = logging.getLogger(__name__)
 
 class PredictionHead(nn.Module):
     """A simple linear prediction head for classification or regression."""
-    def __init__(self, bottleneck_dim: int, output_dim: int = 1,dropout: float = 0.5):
+    def __init__(self, bottleneck_dim: int, output_dim: int = 1):
         super().__init__()
         self.head = nn.Sequential(
-            nn.Dropout(dropout),
-            nn.Linear(bottleneck_dim, output_dim),
+            nn.Linear(bottleneck_dim, bottleneck_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(bottleneck_dim // 2, output_dim)
         )
 
     def forward(self, x):
