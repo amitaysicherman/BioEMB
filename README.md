@@ -1,11 +1,14 @@
-BioEmb: Fine-Tuning Biochemical Embeddings with Self-Constrained Generative Transformers
+# BioEmb: Fine-Tuning Biochemical Embeddings with Self-Constrained Generative Transformers
+
 This repository contains the official implementation for the paper: "BioEmb: Fine-Tuning Biochemical Embeddings with Self-Constrained Generative Transformers".
 
 BioEmb is a novel framework for fine-tuning pre-trained models (like ESM for proteins and MolFormer for molecules) to create high-quality, domain-specific embeddings. Instead of using standard objectives like Masked Language Modeling (MLM), BioEmb employs a self-constrained generative task where the model learns to reconstruct an entity's own unique discrete sequence.
 
 This method forces the model to learn a compressed, informative representation, resulting in embeddings that significantly outperform baselines on a variety of downstream tasks.
 
-Repository Structure
+## Repository Structure
+
+```
 .
 ├── configs/
 │   └── bbbp.yaml           # Example configuration file for the BBBP task
@@ -21,57 +24,57 @@ Repository Structure
 ├── train_bioemb.py         # Main script to train a BioEmb model
 ├── train_mlm_baseline.py   # Script to fine-tune an encoder using the MLM baseline
 └── utils.py                # Utility functions (config parsing, logging callbacks)
+```
 
-Setup
-Clone the repository:
+## Setup
 
-git clone [https://github.com/your-username/BioEmb.git](https://github.com/your-username/BioEmb.git)
+### 1\. Clone the repository:
+
+```bash
+git clone https://github.com/your-username/BioEmb.git
 cd BioEmb
+```
 
-Install dependencies:
+### 2\. Install dependencies:
+
 We recommend using a conda environment.
 
+```bash
 conda create -n bioemb python=3.9
 conda activate bioemb
 pip install -r requirements.txt
+```
 
-(Note: You will need to create a requirements.txt file)
+*(Note: You will need to create a `requirements.txt` file)*
 
-Running Experiments
-All experiments are driven by configuration files located in the configs/ directory.
+## Running Experiments
 
-1. Training a BioEmb Model
+All experiments are driven by configuration files located in the `configs/` directory.
+
+### 1\. Training a BioEmb Model
+
 To train a BioEmb model, use the main training script and specify a configuration file.
 
+```bash
 python train_bioemb.py --config configs/bbbp.yaml
+```
 
 This will:
 
-Load the dataset specified in bbbp.yaml.
+1.  Load the dataset specified in `bbbp.yaml`.
+2.  Initialize the pre-trained encoder (e.g., MolFormer).
+3.  Run the Residual Vector Quantization (RVQ) process to create discrete sequences.
+4.  Build the prefix trie for constrained generation.
+5.  Train the BioEmb model, saving checkpoints and logs to the `output_dir` specified in the config.
+6.  Continuously evaluate performance on downstream tasks during training.
 
-Initialize the pre-trained encoder (e.g., MolFormer).
+### 2\. Fine-tuning with the MLM Baseline
 
-Run the Residual Vector Quantization (RVQ) process to create discrete sequences.
-
-Build the prefix trie for constrained generation.
-
-Train the BioEmb model, saving checkpoints and logs to the output_dir specified in the config.
-
-Continuously evaluate performance on downstream tasks during training.
-
-2. Fine-tuning with the MLM Baseline
 To run the MLM fine-tuning baseline for comparison, use the dedicated script:
 
+```bash
 python train_mlm_baseline.py --config configs/bbbp.yaml
+```
 
 This script will fine-tune the base encoder using a Masked Language Modeling objective on the same dataset.
 
-Citation
-If you use this code or the BioEmb framework in your research, please cite our paper:
-
-@article{sicherman2025bioemb,
-  title={BioEmb: Fine-Tuning Biochemical Embeddings with Self-Constrained Generative Transformers},
-  author={Sicherman, Amitay and Radinsky, Kira},
-  journal={arXiv preprint},
-  year={2025}
-}
