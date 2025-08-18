@@ -1,0 +1,37 @@
+# --- General Experiment Settings ---
+dataset: "BBB_Martins"       # Name of the dataset from the TDC benchmark suite.
+model_type: "molecules"      # Type of data, used for model selection ('molecules' or 'proteins').
+random_seed: 42              # Seed for all random operations to ensure reproducibility.
+output_dir: "results/bbbp/"  # Base directory to save model checkpoints and logs.
+report_to: "tensorboard"     # Logging backend ('tensorboard', 'wandb', 'none').
+
+# --- Pretrained Encoder Settings ---
+model_name: "ibm/MoLFormer-XL-both-10pct" # Hugging Face identifier for the base encoder.
+
+# --- RVQ (Target Discretization) Settings ---
+n_clusters: 15               # Number of clusters (K) for each K-Means layer in RVQ.
+random_tgt: false            # If true, assign random discrete codes (for ablation studies).
+
+# --- BioEmb Model Architecture ---
+hidden_size: 768             # Hidden dimension of the generative decoder.
+num_hidden_layers: 8         # Number of layers in the decoder.
+num_attention_heads: 8       # Number of attention heads in the decoder.
+dropout: 0.2                 # Dropout rate used in the decoder.
+bottleneck_dim: 256          # Dimension of the final output embedding.
+pooling: true                # Whether to apply mean pooling to the encoder's last hidden state.
+
+# --- Constrained Decoding Settings ---
+constraint_mode: "always"    # When to apply trie constraints:
+                             # 'always': during both training and evaluation.
+                             # 'never': disable constraints (for ablation).
+                             # 'eval_only': apply only during evaluation.
+entropy_normalize: true      # If true, use information-weighted loss during training.
+
+# --- Training Hyperparameters ---
+batch_size: 32               # Batch size for training and evaluation.
+epochs: 50                   # Total number of training epochs.
+learning_rate: 0.0001        # Learning rate for the AdamW optimizer.
+log_steps: 100               # Log training metrics every N steps.
+eval_steps: 500              # Run evaluation every N steps.
+save_steps: 500              # Save a model checkpoint every N steps.
+metric_for_best_model: "eval_downstream_auc" # Metric to monitor for saving the best model.
