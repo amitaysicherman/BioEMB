@@ -164,6 +164,7 @@ def compute_downstream_metrics(
     downstream_auc = train_prediction_head(
         model, train_dataset, test_dataset, bottleneck_dim, device, task_type='classification'
     )
+    print("Downstream AUC:", downstream_auc)
     results["downstream_auc"] = downstream_auc
     
     return results
