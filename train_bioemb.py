@@ -17,6 +17,7 @@ import torch
 import os
 from transformers import Trainer, TrainingArguments
 from tdc.single_pred import ADME
+from tdc.single_pred import Tox
 
 from bioemb.trie import build_trie_from_text
 from bioemb.pretrained import get_model_and_tokenizer, QuantizeTokenizer, MODEL_TO_DIM
@@ -30,6 +31,7 @@ from utils import get_config, EvalLoggingCallback, set_seed
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+
 def setup_device() -> torch.device:
     """Detects and returns the available device (CUDA, MPS, or CPU)."""
     if torch.cuda.is_available():
@@ -38,12 +40,17 @@ def setup_device() -> torch.device:
         return torch.device("mps")
     return torch.device("cpu")
 
-def load_dataset(dataset_name: str, seq_col: str, label_col: str,split_method: str ) -> tuple:
+
+def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
     """Loads and splits the dataset using TDC."""
     logger.info(f"Loading dataset: {dataset_name}")
-    data = ADME(name=dataset_name)
+    try:
+        data = ADME(name=dataset_name)
+    except:  # try Tox
+        data = Tox(name=dataset_name)
+    logger.info(f"Dataset {dataset_name} loaded successfully.")
     split = data.get_split(method=split_method, seed=42, frac=[0.8, 0.0, 0.2])
-    
+
     train_data = {
         'sequences': split["train"][seq_col].tolist(),
         'labels': split["train"][label_col].tolist()
@@ -52,20 +59,21 @@ def load_dataset(dataset_name: str, seq_col: str, label_col: str,split_method: s
         'sequences': split["test"][seq_col].tolist(),
         'labels': split["test"][label_col].tolist()
     }
-    
+
     return train_data, test_data
+
 
 def main():
     """Main function to orchestrate the BioEmb training pipeline."""
     config = get_config()
     device = setup_device()
     logger.info(f"Using device: {device}")
-    
+
     set_seed(config.get("random_seed", 42))
 
     # --- 1. Load Data ---
     train_data, test_data = load_dataset(
-        config["dataset"], config["seq_col_name"], config["label_col_name"],config["split_method"]
+        config["dataset"], config["seq_col_name"], config["label_col_name"], config["split_method"]
     )
     all_sequences = train_data['sequences'] + test_data['sequences']
     all_labels = train_data['labels'] + test_data['labels']
@@ -85,11 +93,11 @@ def main():
         random_fit=config.get("random_tgt", False)
     )
     rvq.fit(all_sequences)
-    
+
     tgt_sequences_str = rvq.transform(all_sequences)
     train_tgt_sequences = rvq.transform(train_data['sequences'])
     test_tgt_sequences = rvq.transform(test_data['sequences'])
-    
+
     tgt_tokenizer = QuantizeTokenizer(max_token=config["n_clusters"])
 
     # --- 4. Build Trie for Constrained Decoding ---
@@ -98,7 +106,7 @@ def main():
 
     # --- 5. Create Datasets ---
     encoder_dim = MODEL_TO_DIM.get(config["model_name"], 768)
-    
+
     full_dataset = BioEmbDataset(
         src_texts=all_sequences,
         tgt_texts=tgt_sequences_str,
@@ -134,7 +142,8 @@ def main():
         constraint_mode=config.get("constraint_mode", "always")
     ).to(device)
 
-    logger.info(f"BioEmb model initialized. Trainable parameters: {sum(p.numel() for p in bioemb_model.parameters() if p.requires_grad):,}")
+    logger.info(
+        f"BioEmb model initialized. Trainable parameters: {sum(p.numel() for p in bioemb_model.parameters() if p.requires_grad):,}")
 
     # --- 7. Setup Trainer ---
     metrics_calculator = lambda eval_preds: compute_downstream_metrics(
@@ -145,7 +154,7 @@ def main():
         bottleneck_dim=config["bottleneck_dim"],
         device=device
     )
-    
+
     output_dir = config["output_dir"]
     logs_dir = os.path.join(config.get("logs_base_dir", "logs"), config["dataset"])
 
@@ -156,7 +165,7 @@ def main():
         learning_rate=config["learning_rate"],
         per_device_train_batch_size=config["batch_size"],
         per_device_eval_batch_size=config["batch_size"],
-        num_train_epochs=config.get("epochs", 10), # More intuitive than steps
+        num_train_epochs=config.get("epochs", 10),  # More intuitive than steps
         logging_steps=config["log_steps"],
         eval_steps=config["eval_steps"],
         save_strategy="steps",
@@ -184,6 +193,7 @@ def main():
     trainer.evaluate()
     trainer.train()
     logger.info("Training complete!")
+
 
 if __name__ == "__main__":
     main()
