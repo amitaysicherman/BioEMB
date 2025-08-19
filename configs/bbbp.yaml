@@ -6,6 +6,7 @@ model_type: "molecules"      # Type of data, used for model selection ('molecule
 random_seed: 42              # Seed for all random operations to ensure reproducibility.
 output_dir: "results/bbbp/"  # Base directory to save model checkpoints and logs.
 report_to: "tensorboard"     # Logging backend ('tensorboard', 'wandb', 'none').
+split_method: "scaffold" # Method for splitting the dataset into train/val/test sets.(random / scaffold).
 
 # --- Pretrained Encoder Settings ---
 model_name: "ibm/MoLFormer-XL-both-10pct" # Hugging Face identifier for the base encoder.

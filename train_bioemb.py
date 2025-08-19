@@ -38,11 +38,11 @@ def setup_device() -> torch.device:
         return torch.device("mps")
     return torch.device("cpu")
 
-def load_dataset(dataset_name: str, seq_col: str, label_col: str):
+def load_dataset(dataset_name: str, seq_col: str, label_col: str,split_method: str ) -> tuple:
     """Loads and splits the dataset using TDC."""
     logger.info(f"Loading dataset: {dataset_name}")
     data = ADME(name=dataset_name)
-    split = data.get_split(method='random', seed=42, frac=[0.7, 0.1, 0.2])
+    split = data.get_split(method=split_method, seed=42, frac=[0.8, 0.0, 0.2])
     
     train_data = {
         'sequences': split["train"][seq_col].tolist(),
@@ -65,7 +65,7 @@ def main():
 
     # --- 1. Load Data ---
     train_data, test_data = load_dataset(
-        config["dataset"], config["seq_col_name"], config["label_col_name"]
+        config["dataset"], config["seq_col_name"], config["label_col_name"],config["split_method"]
     )
     all_sequences = train_data['sequences'] + test_data['sequences']
     all_labels = train_data['labels'] + test_data['labels']
