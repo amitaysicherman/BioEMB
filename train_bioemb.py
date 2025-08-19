@@ -155,7 +155,8 @@ def main():
         device=device
     )
 
-    output_dir = config["output_dir"]
+    output_dir = os.path.join(config["output_dir"], config["dataset"])
+    os.makedirs(output_dir, exist_ok=True)
     logs_dir = os.path.join(config.get("logs_base_dir", "logs"), config["dataset"])
 
     training_args = TrainingArguments(
