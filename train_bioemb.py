@@ -154,7 +154,7 @@ def main():
         eval_preds,
         model=bioemb_model,
         train_dataset=train_data,
-        validation_data=validation_data,
+        validation_dataset=validation_data,
         test_dataset=test_dataset,
         bottleneck_dim=config["bottleneck_dim"],
         device=device
