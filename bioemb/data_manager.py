@@ -67,19 +67,23 @@ def get_protein_dataset_splits(dataset_name: str, max_length: int = 1024) -> tup
                             residue_feature="default",
                             transform=transform)
     train_set, valid_set, test_set = dataset.split()
-    splits_data = {"train": train_set, "valid": valid_set, "test": test_set}
-    output = {}
     target_field = dataset_class.target_fields[0]
-    for split_name, split_dataset in splits_data.items():
-        sequences = [data['graph'].to_sequence().replace(".", "") for data in split_dataset]
-        labels = [data[target_field] for data in split_dataset]
-        output[split_name] = {
-            "sequences": sequences,
-            "labels": labels
-        }
-        print(f"Processed {split_name} split: Found {len(sequences)} sequences and {len(labels)} labels.")
-    return output["train"], output["valid"], output["test"]
-
+    print(f"Dataset {dataset_name} .")
+    print(f"Target field: {target_field}.")
+    print(f"Max sequence length: {max_length}.")
+    train_dataset = {
+        "sequences": [data['graph'].to_sequence().replace(".", "") for data in train_set],
+        "labels": [data[target_field] for data in train_set]
+    }
+    valid_dataset = {
+        "sequences": [data['graph'].to_sequence().replace(".", "") for data in valid_set],
+        "labels": [data[target_field] for data in valid_set]
+    }
+    test_dataset = {
+        "sequences": [data['graph'].to_sequence().replace(".", "") for data in test_set],
+        "labels": [data[target_field] for data in test_set]
+    }
+    return train_dataset, valid_dataset, test_dataset
 
 def load_molecule_dataset_splits(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
     from tdc.single_pred import ADME, Tox
