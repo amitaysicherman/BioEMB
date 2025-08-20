@@ -26,6 +26,9 @@ for task_name in all_tasks:
     if not os.path.isdir(os.path.join('results', task_name)):
         continue
     res_file = os.path.join('results', task_name, "evaluation_log.csv")
+    if not os.path.exists(res_file):
+        print(f"Results file for {task_name} does not exist.")
+        continue
     first_row, other_rows = read_csv_with_bug(res_file)
     pre_trained_score = first_row["eval_downstream_auc"].values[0]
     bioemb_scores_test = other_rows["eval_downstream_auc"]
