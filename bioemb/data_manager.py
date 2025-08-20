@@ -14,6 +14,7 @@ from tdc.single_pred import ADME, Tox
 logger = logging.getLogger(__name__)
 
 dataset_to_task_type = {
+    # Molecule datasets
     "BBB_Martins": "classification",
     "CYP2C19_Veith": "classification",
     "CYP2D6_Veith": "classification",
@@ -43,13 +44,45 @@ dataset_to_task_type = {
     "Half_Life_Obach": "regression",
     "Clearance_Hepatocyte_AZ": "regression",
     "LD50_Zhu": "regression",
-
+    # Protein datasets
+    "Solubility": "classification",
+    "BinaryLocalization": "classification",
+    "BetaLactamase":"regression",
+    "Fluorescence":"regression",
+    "Stability":"regression",
 }
 
+from typing import Dict, List, Any
+from torchdrug import datasets, transforms
 
-def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
-    """Loads and splits the dataset using TDC."""
-    logger.info(f"Loading dataset: {dataset_name}")
+
+def get_protein_dataset_splits(dataset_name: str, max_length: int = 1024) -> Dict[str, Dict[str, List[Any]]]:
+    dataset_class = getattr(datasets, dataset_name)
+    transform = transforms.Compose([
+        transforms.TruncateProtein(max_length=max_length, random=False),
+        transforms.ProteinView(view="residue")
+    ])
+    dataset = dataset_class(path="~/torchdrug_data/",
+                            atom_feature=None,
+                            bond_feature=None,
+                            residue_feature="default",
+                            transform=transform)
+    train_set, valid_set, test_set = dataset.split()
+    splits_data = {"train": train_set, "valid": valid_set, "test": test_set}
+    output = {}
+    target_field = dataset_class.target_fields[0]
+    for split_name, split_dataset in splits_data.items():
+        sequences = [data['graph'].to_sequence().replace(".", "") for data in split_dataset]
+        labels = [data[target_field] for data in split_dataset]
+        output[split_name] = {
+            "sequences": sequences,
+            "labels": labels
+        }
+        print(f"Processed {split_name} split: Found {len(sequences)} sequences and {len(labels)} labels.")
+    return output
+
+
+def load_molecule_dataset_splits(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
     try:
         data = ADME(name=dataset_name)
     except:  # try Tox
@@ -69,6 +102,20 @@ def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: 
         'sequences': split["test"][seq_col].tolist(),
         'labels': split["test"][label_col].tolist()
     }
+    return train_data, validation_data, test_data
+
+
+def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: str, data_type: str) -> tuple:
+    """Loads and splits the dataset using TDC."""
+    logger.info(f"Loading dataset: {dataset_name}")
+    if data_type == "molecules":
+        train_data, validation_data, test_data = load_molecule_dataset_splits(
+            dataset_name, seq_col, label_col, split_method
+        )
+    elif data_type == "proteins":
+        train_data, validation_data, test_data = get_protein_dataset_splits(dataset_name)
+    else:
+        raise ValueError(f"Unsupported data type: {data_type}. Supported types are 'molecules' and 'proteins'.")
     logger.info(f"Dataset split into train ({len(train_data['sequences'])}), "
                 f"validation ({len(validation_data['sequences'])}), "
                 f"and test ({len(test_data['sequences'])}) sets.")

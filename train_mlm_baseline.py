@@ -53,7 +53,7 @@ def main():
     mlm_model = AutoModelForMaskedLM.from_pretrained(config['model_name'], **args).to(device)
     # --- 2. Load and Prepare Data ---
     train_data, test_data = load_dataset(
-        config["dataset"], config["seq_col_name"], config["label_col_name"]
+        config["dataset"], config["seq_col_name"], config["label_col_name"], config["split_method"], config["model_type"]
     )
     all_sequences = train_data['sequences'] + test_data['sequences']
 

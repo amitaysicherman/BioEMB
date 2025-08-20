@@ -51,7 +51,7 @@ def main():
 
     # --- 1. Load Data ---
     train_data, validation_data, test_data = load_dataset(
-        config["dataset"], config["seq_col_name"], config["label_col_name"], config["split_method"]
+        config["dataset"], config["seq_col_name"], config["label_col_name"], config["split_method"], config["model_type"]
     )
     all_sequences = train_data['sequences'] + validation_data['sequences'] + test_data['sequences']
     all_labels = train_data['labels'] + validation_data['labels'] + test_data['labels']
