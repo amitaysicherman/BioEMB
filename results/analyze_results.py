@@ -8,7 +8,7 @@ def read_csv_with_bug(file_name):
     first_row_data = pd.read_csv(
         file_name,
         header=0,
-        nrows=2  # Read only the first row.
+        nrows=1  # Read only the first row.
     )
 
     df = pd.read_csv(
@@ -29,7 +29,7 @@ for task_name in all_tasks:
     first_row, other_rows = read_csv_with_bug(res_file)
     data = pd.read_csv(res_file)
     pre_trained_score = first_row["first_row_data"]
-    bioemb_scores = other_rows["first_row_data"]  # TODO: fix the bug in the name.
+    bioemb_scores = other_rows["first_row_data"]
     if dataset_to_task_type[task_name] == "classification":
         best_score = bioemb_scores.max()
     elif dataset_to_task_type[task_name] == "regression":
