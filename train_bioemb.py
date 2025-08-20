@@ -49,18 +49,22 @@ def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: 
     except:  # try Tox
         data = Tox(name=dataset_name)
     logger.info(f"Dataset {dataset_name} loaded successfully.")
-    split = data.get_split(method=split_method, seed=42, frac=[0.8, 0.0, 0.2])
+    split = data.get_split(method=split_method, seed=42, frac=[0.7, 0.1, 0.2])
 
     train_data = {
         'sequences': split["train"][seq_col].tolist(),
         'labels': split["train"][label_col].tolist()
+    }
+    validation_data = {
+        'sequences': split["valid"][seq_col].tolist(),
+        'labels': split["valid"][label_col].tolist()
     }
     test_data = {
         'sequences': split["test"][seq_col].tolist(),
         'labels': split["test"][label_col].tolist()
     }
 
-    return train_data, test_data
+    return train_data, validation_data, test_data
 
 
 def main():
@@ -72,11 +76,11 @@ def main():
     set_seed(config.get("random_seed", 42))
 
     # --- 1. Load Data ---
-    train_data, test_data = load_dataset(
+    train_data, validation_data, test_data = load_dataset(
         config["dataset"], config["seq_col_name"], config["label_col_name"], config["split_method"]
     )
-    all_sequences = train_data['sequences'] + test_data['sequences']
-    all_labels = train_data['labels'] + test_data['labels']
+    all_sequences = train_data['sequences'] + validation_data['sequences'] + test_data['sequences']
+    all_labels = train_data['labels'] + validation_data['labels'] + test_data['labels']
 
     # --- 2. Initialize Models and Tokenizers ---
     encoder, src_tokenizer = get_model_and_tokenizer(
@@ -149,7 +153,8 @@ def main():
     metrics_calculator = lambda eval_preds: compute_downstream_metrics(
         eval_preds,
         model=bioemb_model,
-        train_dataset=full_dataset,
+        train_dataset=train_data,
+        validation_data=validation_data,
         test_dataset=test_dataset,
         bottleneck_dim=config["bottleneck_dim"],
         device=device
