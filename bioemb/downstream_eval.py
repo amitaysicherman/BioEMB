@@ -140,7 +140,7 @@ def train_prediction_head(
                     best_valid_score = validation_score
                     best_test_score = test_score
     logger.info(f"Best validation score: {best_valid_score:.4f}, Test score: {best_test_score:.4f}")
-    return best_test_score
+    return best_test_score, best_valid_score
 
 
 def compute_downstream_metrics(
@@ -178,10 +178,11 @@ def compute_downstream_metrics(
 
     # --- Downstream Task Metrics ---
     # Assuming classification for now, can be extended
-    downstream_auc = train_prediction_head(
+    downstream_auc, downstream_auc_valid = train_prediction_head(
         model, train_dataset, validation_dataset, test_dataset, bottleneck_dim, device, task_type=task_type, mlm=False
     )
     print("Downstream AUC:", downstream_auc)
     results["downstream_auc"] = downstream_auc
+    results["downstream_auc_valid"] = downstream_auc_valid
 
     return results
