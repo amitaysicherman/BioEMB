@@ -1,15 +1,15 @@
 # --- General Experiment Settings ---
-dataset: "Solubility"       # Name of the dataset from the TDC benchmark suite.
+dataset: "BBB_Martins"       # Name of the dataset from the TDC benchmark suite.
 seq_col_name: "Drug"        # Column name in the dataset containing sequence strings.
 label_col_name: "Y"      # Column name for the target label in the dataset.
-model_type: "proteins"      # Type of data, used for model selection ('molecules' or 'proteins').
+model_type: "molecules"      # Type of data, used for model selection ('molecules' or 'proteins').
 random_seed: 42              # Seed for all random operations to ensure reproducibility.
 output_dir: "results"  # Base directory to save model checkpoints and logs.
 report_to: "tensorboard"     # Logging backend ('tensorboard', 'wandb', 'none').
 split_method: "scaffold" # Method for splitting the dataset into train/val/test sets.(random / scaffold).
 
 # --- Pretrained Encoder Settings ---
-model_name: "Rostlab/prot_bert" # Hugging Face identifier for the base encoder.
+model_name: "ibm/MoLFormer-XL-both-10pct" # Hugging Face identifier for the base encoder.
 
 # --- RVQ (Target Discretization) Settings ---
 n_clusters: 15               # Number of clusters (K) for each K-Means layer in RVQ.
