@@ -98,7 +98,7 @@ def main():
         **dataset_args
     )
     validation_dataset = get_dataset(
-        sequences=validation_data['sequences'], tgt_sequences=train_tgt_sequences, labels=validation_data['labels'],
+        sequences=validation_data['sequences'], tgt_sequences=validation_tgt_sequences, labels=validation_data['labels'],
         **dataset_args
     )
     test_dataset = get_dataset(
