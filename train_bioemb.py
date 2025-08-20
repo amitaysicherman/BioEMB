@@ -63,8 +63,23 @@ def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: 
         'sequences': split["test"][seq_col].tolist(),
         'labels': split["test"][label_col].tolist()
     }
+    logger.info(f"Dataset split into train ({len(train_data['sequences'])}), "
+                f"validation ({len(validation_data['sequences'])}), "
+                f"and test ({len(test_data['sequences'])}) sets.")
 
     return train_data, validation_data, test_data
+
+
+def get_dataset(sequences, tgt_sequences, labels, src_tokenizer, tgt_tokenizer, encoder, pooling=True):
+    return BioEmbDataset(
+        src_texts=sequences,
+        tgt_texts=tgt_sequences,
+        src_tokenizer=src_tokenizer,
+        tgt_tokenizer=tgt_tokenizer,
+        labels=labels,
+        src_encoder=encoder,
+        pooling=pooling
+    )
 
 
 def main():
@@ -98,39 +113,38 @@ def main():
     )
     rvq.fit(all_sequences)
 
-    tgt_sequences_str = rvq.transform(all_sequences)
+    all_tgt_sequences = rvq.transform(all_sequences)
     train_tgt_sequences = rvq.transform(train_data['sequences'])
+    validation_tgt_sequences = rvq.transform(validation_data['sequences'])
     test_tgt_sequences = rvq.transform(test_data['sequences'])
 
     tgt_tokenizer = QuantizeTokenizer(max_token=config["n_clusters"])
 
     # --- 4. Build Trie for Constrained Decoding ---
     logger.info("Building prefix trie for constrained decoding...")
-    trie = build_trie_from_text(list(set(tgt_sequences_str)), tgt_tokenizer)
+    trie = build_trie_from_text(list(set(all_tgt_sequences)), tgt_tokenizer)
 
     # --- 5. Create Datasets ---
     encoder_dim = MODEL_TO_DIM.get(config["model_name"], 768)
-
-    full_dataset = BioEmbDataset(
-        src_texts=all_sequences,
-        tgt_texts=tgt_sequences_str,
+    dataset_args = dict(
         src_tokenizer=src_tokenizer,
         tgt_tokenizer=tgt_tokenizer,
-        labels=all_labels,
-        src_encoder=encoder,
+        encoder=encoder,
         pooling=config.get("pooling", True)
     )
-
-    test_dataset = BioEmbDataset(
-        src_texts=test_data['sequences'],
-        tgt_texts=test_tgt_sequences,
-        src_tokenizer=src_tokenizer,
-        tgt_tokenizer=tgt_tokenizer,
-        labels=test_data['labels'],
-        src_encoder=encoder,
-        pooling=config.get("pooling", True)
+    full_dataset = get_dataset(sequences=all_sequences, tgt_sequences=all_tgt_sequences, labels=all_labels,
+                               **dataset_args)
+    train_dataset = get_dataset(
+        sequences=train_data['sequences'], tgt_sequences=train_tgt_sequences, labels=train_data['labels'],
+        **dataset_args
     )
-
+    validation_dataset = get_dataset(
+        sequences=validation_data['sequences'], tgt_sequences=train_tgt_sequences, labels=validation_data['labels'],
+        **dataset_args
+    )
+    test_dataset = get_dataset(
+        sequences=test_data['sequences'], tgt_sequences=test_tgt_sequences, labels=test_data['labels'], **dataset_args
+    )
     # --- 6. Initialize BioEmb Model ---
     logger.info("Initializing BioEmb model...")
     bioemb_model = BioEmbModel(
@@ -153,8 +167,8 @@ def main():
     metrics_calculator = lambda eval_preds: compute_downstream_metrics(
         eval_preds,
         model=bioemb_model,
-        train_dataset=train_data,
-        validation_dataset=validation_data,
+        train_dataset=train_dataset,
+        validation_dataset=validation_dataset,
         test_dataset=test_dataset,
         bottleneck_dim=config["bottleneck_dim"],
         device=device
