@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=10-38
+#SBATCH --array=1-28
 
 idx=$((SLURM_ARRAY_TASK_ID))
 commands=(
