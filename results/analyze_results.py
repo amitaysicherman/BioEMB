@@ -28,6 +28,9 @@ for dir_name in all_tasks:
         print(f"Results file for {dir_name} does not exist.")
         continue
     first_row, other_rows = read_csv_with_bug(res_file)
+    if first_row.empty or other_rows.empty:
+        print(f"No data found in results file for {dir_name}.")
+        continue
     pre_trained_score = first_row["eval_downstream_auc"].values[0]
     bioemb_scores_test = other_rows["eval_downstream_auc"]
     bioemb_scores_valid = other_rows["eval_downstream_auc_valid"]
