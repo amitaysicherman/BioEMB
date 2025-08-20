@@ -23,7 +23,7 @@ class PredictionHead(nn.Module):
     def __init__(self, bottleneck_dim: int, output_dim: int = 1):
         super().__init__()
         self.head = nn.Sequential(
-            nn.Linear(bottleneck_dim, bottleneck_dim // 2),
+            nn.Linear(bottleneck_dim, bottleneck_dim),
             nn.ReLU(),
             # nn.Dropout(0.3),
             # nn.Linear(bottleneck_dim // 2, output_dim)
