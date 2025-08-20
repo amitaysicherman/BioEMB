@@ -29,8 +29,10 @@ for task_name in all_tasks:
     first_row, other_rows = read_csv_with_bug(res_file)
     pre_trained_score = first_row["eval_downstream_auc"].values[0]
     bioemb_scores = other_rows["eval_downstream_auc"]
-    if dataset_to_task_type[task_name] == "classification":
+    task_type= dataset_to_task_type[task_name]
+    if task_type == "classification":
         best_score = bioemb_scores.max()
-    elif dataset_to_task_type[task_name] == "regression":
+    elif task_type == "regression":
         best_score = bioemb_scores.min()
-    print(f"Task: {task_name}, Pre-trained Score: {pre_trained_score:.4f}, BioEmb Best Score: {best_score:.4f}")
+
+    print(f"Task: {task_name}[{task_type}], Pre-trained Score: {pre_trained_score:.4f}, BioEmb Best Score: {best_score:.4f}")
