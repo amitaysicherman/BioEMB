@@ -32,7 +32,7 @@ for dir_name in all_tasks:
     bioemb_scores_test = other_rows["eval_downstream_auc"]
     bioemb_scores_valid = other_rows["eval_downstream_auc_valid"]
     task_name = dir_name.split("~")[0]
-    task_type = dataset_to_task_type[dir_name]
+    task_type = dataset_to_task_type[task_name]
     if task_type == "classification":
         best_index = bioemb_scores_valid.idxmax()
         best_score = bioemb_scores_test[best_index]
