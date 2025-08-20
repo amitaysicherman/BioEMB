@@ -27,7 +27,7 @@ class PredictionHead(nn.Module):
             # nn.ReLU(),
             # nn.Dropout(0.3),
             # nn.Linear(bottleneck_dim // 2, output_dim)
-            nn.Dropout(0.3),
+            # nn.Dropout(0.3),
             nn.Linear(bottleneck_dim, output_dim)
 
         )

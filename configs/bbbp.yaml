@@ -20,7 +20,7 @@ hidden_size: 768             # Hidden dimension of the generative decoder.
 num_hidden_layers: 8         # Number of layers in the decoder.
 num_attention_heads: 8       # Number of attention heads in the decoder.
 dropout: 0.2                 # Dropout rate used in the decoder.
-bottleneck_dim: 256          # Dimension of the final output embedding.
+bottleneck_dim: 64          # Dimension of the final output embedding.
 pooling: true                # Whether to apply mean pooling to the encoder's last hidden state.
 
 # --- Constrained Decoding Settings ---
