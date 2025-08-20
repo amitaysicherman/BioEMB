@@ -27,9 +27,8 @@ for task_name in all_tasks:
         continue
     res_file = os.path.join('results', task_name, "evaluation_log.csv")
     first_row, other_rows = read_csv_with_bug(res_file)
-    data = pd.read_csv(res_file)
-    pre_trained_score = first_row["first_row_data"]
-    bioemb_scores = other_rows["first_row_data"]
+    pre_trained_score = first_row["eval_downstream_auc"].values[0]
+    bioemb_scores = other_rows["eval_downstream_auc"]
     if dataset_to_task_type[task_name] == "classification":
         best_score = bioemb_scores.max()
     elif dataset_to_task_type[task_name] == "regression":
