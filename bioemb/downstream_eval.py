@@ -132,14 +132,12 @@ def train_prediction_head(
                 test_score = roc_auc_score(test_labels.numpy(), test_preds)
                 if validation_score > best_valid_score:
                     best_valid_score = validation_score
-                    best_score = test_score
                     best_test_score = test_score
             else:
                 validation_score = np.sqrt(mean_squared_error(validation_labels.numpy(), validation_preds))
                 test_score = np.sqrt(mean_squared_error(test_labels.numpy(), test_preds))
                 if validation_score < best_valid_score:
                     best_valid_score = validation_score
-                    best_score = test_score
                     best_test_score = test_score
     logger.info(f"Best validation score: {best_valid_score:.4f}, Test score: {best_test_score:.4f}")
     return best_test_score
