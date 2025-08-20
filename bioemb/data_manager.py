@@ -56,7 +56,7 @@ from typing import Dict, List, Any
 from torchdrug import datasets, transforms
 
 
-def get_protein_dataset_splits(dataset_name: str, max_length: int = 1024) -> Dict[str, Dict[str, List[Any]]]:
+def get_protein_dataset_splits(dataset_name: str, max_length: int = 1024) -> tuple:
     dataset_class = getattr(datasets, dataset_name)
     transform = transforms.Compose([
         transforms.TruncateProtein(max_length=max_length, random=False),
@@ -79,7 +79,7 @@ def get_protein_dataset_splits(dataset_name: str, max_length: int = 1024) -> Dic
             "labels": labels
         }
         print(f"Processed {split_name} split: Found {len(sequences)} sequences and {len(labels)} labels.")
-    return output
+    return output["train"], output["valid"], output["test"]
 
 
 def load_molecule_dataset_splits(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
