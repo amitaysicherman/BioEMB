@@ -12,7 +12,6 @@ approach. It performs the following steps:
 6.  Evaluates the fine-tuned encoder on a downstream task.
 """
 import logging
-import torch
 from transformers import (
     AutoModelForMaskedLM,
     Trainer,
@@ -24,8 +23,8 @@ import os
 from utils import get_config, set_seed
 from bioemb.pretrained import get_model_and_tokenizer
 from bioemb.downstream_eval import train_prediction_head
-from train_bioemb import load_dataset, setup_device
-from bioemb.data_manager import BioEmbDataset
+from train_bioemb import setup_device
+from bioemb.data_manager import BioEmbDataset, dataset_to_task_type, load_dataset
 
 # --- Setup Logging ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -124,7 +123,7 @@ def main():
         test_eval_dataset,
         finetuned_encoder.config.hidden_size,
         device,
-        task_type='classification',  # Assuming classification
+        task_type=dataset_to_task_type[config['dataset']],
         mlm=True  # Indicate this is an MLM-finetuned model
     )
     with open(res_file, 'a') as f:
@@ -142,7 +141,7 @@ def main():
         test_eval_dataset,
         bottleneck_dim,
         device,
-        task_type='classification',  # Assuming classification
+        task_type=dataset_to_task_type[config['dataset']],
         mlm=True  # Indicate this is an MLM-finetuned model
     )
     with open(res_file, 'a') as f:

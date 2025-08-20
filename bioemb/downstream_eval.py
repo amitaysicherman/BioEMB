@@ -43,7 +43,7 @@ def train_prediction_head(
         test_dataset,
         bottleneck_dim: int,
         device: torch.device,
-        task_type: str = 'classification',
+        task_type: str,
         mlm: bool = False
 
 ):
@@ -146,7 +146,7 @@ def train_prediction_head(
 
 
 def compute_downstream_metrics(
-        eval_preds, model, train_dataset, validation_dataset, test_dataset, bottleneck_dim, device
+        eval_preds, model, train_dataset, validation_dataset, test_dataset, bottleneck_dim, device, task_type
 ) -> dict:
     """
     Computes both sequence generation and downstream task metrics.
@@ -181,7 +181,7 @@ def compute_downstream_metrics(
     # --- Downstream Task Metrics ---
     # Assuming classification for now, can be extended
     downstream_auc = train_prediction_head(
-        model, train_dataset, validation_dataset, test_dataset, bottleneck_dim, device, task_type='classification'
+        model, train_dataset, validation_dataset, test_dataset, bottleneck_dim, device, task_type=task_type, mlm=False
     )
     print("Downstream AUC:", downstream_auc)
     results["downstream_auc"] = downstream_auc

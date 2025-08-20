@@ -16,16 +16,14 @@ import logging
 import torch
 import os
 from transformers import Trainer, TrainingArguments
-from tdc.single_pred import ADME
-from tdc.single_pred import Tox
 
 from bioemb.trie import build_trie_from_text
 from bioemb.pretrained import get_model_and_tokenizer, QuantizeTokenizer, MODEL_TO_DIM
-from bioemb.data_manager import BioEmbDataset
 from bioemb.rvq import ResidualVectorQuantizer
 from bioemb.downstream_eval import compute_downstream_metrics
 from bioemb.models import BioEmbModel
 from utils import get_config, EvalLoggingCallback, set_seed
+from bioemb.data_manager import load_dataset, get_dataset,dataset_to_task_type
 
 # --- Setup Logging ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -41,45 +39,6 @@ def setup_device() -> torch.device:
     return torch.device("cpu")
 
 
-def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
-    """Loads and splits the dataset using TDC."""
-    logger.info(f"Loading dataset: {dataset_name}")
-    try:
-        data = ADME(name=dataset_name)
-    except:  # try Tox
-        data = Tox(name=dataset_name)
-    logger.info(f"Dataset {dataset_name} loaded successfully.")
-    split = data.get_split(method=split_method, seed=42, frac=[0.7, 0.1, 0.2])
-
-    train_data = {
-        'sequences': split["train"][seq_col].tolist(),
-        'labels': split["train"][label_col].tolist()
-    }
-    validation_data = {
-        'sequences': split["valid"][seq_col].tolist(),
-        'labels': split["valid"][label_col].tolist()
-    }
-    test_data = {
-        'sequences': split["test"][seq_col].tolist(),
-        'labels': split["test"][label_col].tolist()
-    }
-    logger.info(f"Dataset split into train ({len(train_data['sequences'])}), "
-                f"validation ({len(validation_data['sequences'])}), "
-                f"and test ({len(test_data['sequences'])}) sets.")
-
-    return train_data, validation_data, test_data
-
-
-def get_dataset(sequences, tgt_sequences, labels, src_tokenizer, tgt_tokenizer, encoder, pooling=True):
-    return BioEmbDataset(
-        src_texts=sequences,
-        tgt_texts=tgt_sequences,
-        src_tokenizer=src_tokenizer,
-        tgt_tokenizer=tgt_tokenizer,
-        labels=labels,
-        src_encoder=encoder,
-        pooling=pooling
-    )
 
 
 def main():
@@ -171,7 +130,8 @@ def main():
         validation_dataset=validation_dataset,
         test_dataset=test_dataset,
         bottleneck_dim=config["bottleneck_dim"],
-        device=device
+        device=device,
+        task_type=dataset_to_task_type[config["dataset"]]
     )
 
     output_dir = os.path.join(config["output_dir"], config["dataset"])

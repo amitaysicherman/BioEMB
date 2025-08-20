@@ -8,6 +8,85 @@ accelerate training when the source encoder is frozen.
 import torch
 from torch.utils.data import Dataset as TorchDataset
 from typing import List, Dict, Any
+import logging
+from tdc.single_pred import ADME, Tox
+
+logger = logging.getLogger(__name__)
+
+dataset_to_task_type = {
+    "BBB_Martins": "classification",
+    "CYP2C19_Veith": "classification",
+    "CYP2D6_Veith": "classification",
+    "CYP3A4_Veith": "classification",
+    "CYP1A2_Veith": "classification",
+    "CYP2C9_Veith": "classification",
+    "CYP2C9_Substrate_CarbonMangels": "classification",
+    "CYP2D6_Substrate_CarbonMangels": "classification",
+    "CYP3A4_Substrate_CarbonMangels": "classification",
+    "AMES": "classification",
+    "ClinTox": "classification",
+    "Carcinogens_Lagunin": "classification",
+    "PAMPA_NCATS": "classification",
+    "HIA_Hou": "classification",
+    "Pgp_Broccatelli": "classification",
+    "Bioavailability_Ma": "classification",
+    "hERG": "classification",
+    "hERG_Karim": "classification",
+    "DILI": "classification",
+    "Skin Reaction": "classification",
+    "Caco2_Wang": "regression",
+    "Lipophilicity_AstraZeneca": "regression",
+    "Solubility_AqSolDB": "regression",
+    "HydrationFreeEnergy_FreeSolv": "regression",
+    "PPBR_AZ": "regression",
+    "VDss_Lombardo": "regression",
+    "Half_Life_Obach": "regression",
+    "Clearance_Hepatocyte_AZ": "regression",
+    "LD50_Zhu": "regression",
+
+}
+
+
+def load_dataset(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
+    """Loads and splits the dataset using TDC."""
+    logger.info(f"Loading dataset: {dataset_name}")
+    try:
+        data = ADME(name=dataset_name)
+    except:  # try Tox
+        data = Tox(name=dataset_name)
+    logger.info(f"Dataset {dataset_name} loaded successfully.")
+    split = data.get_split(method=split_method, seed=42, frac=[0.7, 0.1, 0.2])
+
+    train_data = {
+        'sequences': split["train"][seq_col].tolist(),
+        'labels': split["train"][label_col].tolist()
+    }
+    validation_data = {
+        'sequences': split["valid"][seq_col].tolist(),
+        'labels': split["valid"][label_col].tolist()
+    }
+    test_data = {
+        'sequences': split["test"][seq_col].tolist(),
+        'labels': split["test"][label_col].tolist()
+    }
+    logger.info(f"Dataset split into train ({len(train_data['sequences'])}), "
+                f"validation ({len(validation_data['sequences'])}), "
+                f"and test ({len(test_data['sequences'])}) sets.")
+
+    return train_data, validation_data, test_data
+
+
+def get_dataset(sequences, tgt_sequences, labels, src_tokenizer, tgt_tokenizer, encoder, pooling=True):
+    return BioEmbDataset(
+        src_texts=sequences,
+        tgt_texts=tgt_sequences,
+        src_tokenizer=src_tokenizer,
+        tgt_tokenizer=tgt_tokenizer,
+        labels=labels,
+        src_encoder=encoder,
+        pooling=pooling
+    )
+
 
 class BioEmbDataset(TorchDataset):
     """
@@ -20,15 +99,15 @@ class BioEmbDataset(TorchDataset):
     """
 
     def __init__(
-        self,
-        src_texts: List[str],
-        tgt_texts: List[str],
-        src_tokenizer: Any,
-        tgt_tokenizer: Any,
-        labels: List[int],
-        src_encoder: torch.nn.Module,
-        max_length: int = 256,
-        pooling: bool = True
+            self,
+            src_texts: List[str],
+            tgt_texts: List[str],
+            src_tokenizer: Any,
+            tgt_tokenizer: Any,
+            labels: List[int],
+            src_encoder: torch.nn.Module,
+            max_length: int = 256,
+            pooling: bool = True
     ):
         """
         Initializes the dataset.
@@ -73,7 +152,7 @@ class BioEmbDataset(TorchDataset):
 
         with torch.no_grad():
             encoder_output = self.src_encoder(**src_tokens)
-        
+
         # Pool the output to get a fixed-size representation
         if self.pooling:
             last_hidden_state = encoder_output.last_hidden_state
@@ -101,7 +180,7 @@ class BioEmbDataset(TorchDataset):
             tgt_text, max_length=self.max_length, truncation=True,
             padding="max_length", return_tensors="pt"
         )
-        
+
         # Prepare labels for loss calculation (shift and mask padding)
         decoder_labels = tgt_tokens["input_ids"].clone().squeeze(0)
         decoder_labels[decoder_labels == self.tgt_tokenizer.pad_token_id] = -100
