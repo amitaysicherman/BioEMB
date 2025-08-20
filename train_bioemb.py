@@ -148,7 +148,6 @@ def main():
         per_device_train_batch_size=config["batch_size"],
         per_device_eval_batch_size=config["batch_size"],
         num_train_epochs=config["epochs"],
-        logging_steps=config["log_steps"],
         save_total_limit=3,
         load_best_model_at_end=True,
         metric_for_best_model=config.get("metric_for_best_model", "eval_downstream_auc"),
