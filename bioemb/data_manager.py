@@ -7,9 +7,8 @@ accelerate training when the source encoder is frozen.
 """
 import torch
 from torch.utils.data import Dataset as TorchDataset
-from typing import List, Dict, Any
 import logging
-from tdc.single_pred import ADME, Tox
+from typing import Dict, List, Any
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +51,11 @@ dataset_to_task_type = {
     "Stability":"regression",
 }
 
-from typing import Dict, List, Any
-from torchdrug import datasets, transforms
 
 
 def get_protein_dataset_splits(dataset_name: str, max_length: int = 1024) -> tuple:
+    from torchdrug import datasets, transforms
+
     dataset_class = getattr(datasets, dataset_name)
     transform = transforms.Compose([
         transforms.TruncateProtein(max_length=max_length, random=False),
@@ -83,6 +82,8 @@ def get_protein_dataset_splits(dataset_name: str, max_length: int = 1024) -> tup
 
 
 def load_molecule_dataset_splits(dataset_name: str, seq_col: str, label_col: str, split_method: str) -> tuple:
+    from tdc.single_pred import ADME, Tox
+
     try:
         data = ADME(name=dataset_name)
     except:  # try Tox
