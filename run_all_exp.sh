@@ -41,4 +41,8 @@ cmd=${commands[$idx]}
 echo $cmd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 eval $cmd
-
+# run cmd with model_name=seyonec/ChemBERTa-zinc-base-v1 argument (add to the end of the command)
+cmd="$cmd --model_name=seyonec/ChemBERTa-zinc-base-v1"
+echo $cmd
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+eval $cmd

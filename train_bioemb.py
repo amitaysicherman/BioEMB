@@ -134,7 +134,7 @@ def main():
         task_type=dataset_to_task_type[config["dataset"]]
     )
 
-    output_dir = os.path.join(config["output_dir"], config["dataset"])
+    output_dir = os.path.join(config["output_dir"], config["dataset"]+config['model_name'].replace('/', '_'))
     os.makedirs(output_dir, exist_ok=True)
     logs_dir = os.path.join(config.get("logs_base_dir", "logs"), config["dataset"])
 
